@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { getKindeServerSession, LoginLink } from '@kinde-oss/kinde-auth-nextjs/server';
-
+import { LogoutLink } from '@kinde-oss/kinde-auth-nextjs/server';
 export default async function Navbar() {
   const auth = await getKindeServerSession()
   const isAuthenticated = await auth.isAuthenticated()
@@ -15,26 +15,21 @@ export default async function Navbar() {
 isAuthenticated &&
         
         <div className="space-x-4">
-          <Link href="/notes">
+      
+          {/* <Link href="/forum"> */}
             <Button variant="ghost" className="text-white hover:bg-blue-700">
-              Notes
+              <LogoutLink>
+
+                sign out
+                </LogoutLink>
             </Button>
-          </Link>
-          <Link href="/forum">
-            <Button variant="ghost" className="text-white hover:bg-blue-700">
-              Forum
-            </Button>
-          </Link>
+          {/* </Link> */}
           <Link href="/profile">
             <Button variant="ghost" className="text-white hover:bg-blue-700">
               Profile
             </Button>
           </Link>
-          <Link href="/profile">
-            <Button variant="ghost" className="text-white hover:bg-blue-700">
-              Profile
-            </Button>
-          </Link>
+      
         </div>
 }
 {
