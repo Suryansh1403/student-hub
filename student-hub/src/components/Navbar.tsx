@@ -35,12 +35,8 @@ isAuthenticated &&
 {
 !isAuthenticated &&  
  <div className="space-x-4">
-{/* <Link href="/notes"> */}
+
  <LoginLink>Sign in</LoginLink>
-{/* </Link> */}
-{/* <Link href="/forum"> */}
-<LoginLink>Sign in</LoginLink>
-{/* </Link> */}
 
 </div>
 }
