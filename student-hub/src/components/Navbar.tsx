@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { getKindeServerSession, LoginLink } from '@kinde-oss/kinde-auth-nextjs/server';
 
 export default async function Navbar() {
-  const isAuthenticated = await getKindeServerSession()
+  const auth = await getKindeServerSession()
+  const isAuthenticated = await auth.isAuthenticated()
   return (
     <nav className="bg-blue-600 p-4">
       <div className="container mx-auto flex justify-between items-center">
@@ -39,12 +40,12 @@ isAuthenticated &&
 {
 !isAuthenticated &&  
  <div className="space-x-4">
-<Link href="/notes">
+{/* <Link href="/notes"> */}
  <LoginLink>Sign in</LoginLink>
-</Link>
-<Link href="/forum">
+{/* </Link> */}
+{/* <Link href="/forum"> */}
 <LoginLink>Sign in</LoginLink>
-</Link>
+{/* </Link> */}
 
 </div>
 }
