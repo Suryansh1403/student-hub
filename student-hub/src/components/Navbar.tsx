@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { getKindeServerSession, LoginLink } from '@kinde-oss/kinde-auth-nextjs/server';
 import { LogoutLink } from '@kinde-oss/kinde-auth-nextjs/server';
 export default async function Navbar() {
-  const auth = await getKindeServerSession()
-  const isAuthenticated = await auth.isAuthenticated()
+  const {isAuthenticated,getUser} = await getKindeServerSession()
+  const isAuth = await isAuthenticated()
+  
   return (
     <nav className="bg-blue-600 p-4">
       <div className="container mx-auto flex justify-between items-center">
@@ -12,7 +13,7 @@ export default async function Navbar() {
           Student Hub
         </Link>
         {
-isAuthenticated &&
+isAuth &&
         
         <div className="space-x-4">
       
@@ -33,7 +34,7 @@ isAuthenticated &&
         </div>
 }
 {
-!isAuthenticated &&  
+!isAuth &&  
  <div className="space-x-4">
 
  <LoginLink>Sign in</LoginLink>
