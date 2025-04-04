@@ -34,7 +34,6 @@ export default function RootLayout({
       >
 <ReactQueryProvider>
 
-        <Navbar/>
         {children}
 </ReactQueryProvider>
       </body>

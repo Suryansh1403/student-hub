@@ -1,3 +1,5 @@
+import  AppSidebar  from '@/components/AppSideBar';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { getKindeServerSession } from '@kinde-oss/kinde-auth-nextjs/server'
 import { redirect } from 'next/navigation';
 import React from 'react'
@@ -9,7 +11,14 @@ const layout = async ({children}:{children:React.ReactNode}) => {
 redirect('/')
     }
   return (
-    <div>{children}</div>
+    <SidebarProvider>
+    <AppSidebar />
+    <main>
+      <SidebarTrigger />
+      {children}
+    </main>
+  </SidebarProvider>
+
   )
 }
 

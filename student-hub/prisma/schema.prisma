@@ -13,22 +13,85 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 model User {
-  id    String @id @unique //matches kinde user id
-  email String @unique
-
-  notes     Note[]
-
-
+id    String @id @unique
+  name          String
+  email         String     @unique
+  password      String
+  avatarUrl     String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  notes         Note[]
+  likedNotes    Like[]
+  bookmarked    Bookmark[]
+  viewedNotes   View[]
+  followers     User[]     @relation("UserFollows")
+  following     User[]     @relation("UserFollows")
 
 }
 
-
 model Note {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String     @id @default(uuid())
+  title         String
+  content       String     @db.Text
+  description   String?
+  isPublic      Boolean    @default(false)
+  views         Int        @default(0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  author        User       @relation(fields: [authorId], references: [id])
+  authorId      String
+  subject       Subject    @relation(fields: [subjectId], references: [id])
+  subjectId     String
+  likes         Like[]
+  bookmarks     Bookmark[]
+  viewHistory   View[]
+  tags          Tag[]
+}
+
+model Subject {
+  id            String     @id @default(uuid())
+  name          String     @unique
+  description   String?
+  notes         Note[]
+  createdAt     DateTime   @default(now())
+}
+
+model Tag {
+  id            String     @id @default(uuid())
+  name          String
+  notes         Note[]     @relation()
+  createdAt     DateTime   @default(now())
+}
+
+model Like {
+  id            String     @id @default(uuid())
+  user          User       @relation(fields: [userId], references: [id])
+  userId        String
+  note          Note       @relation(fields: [noteId], references: [id])
+  noteId        String
+  createdAt     DateTime   @default(now())
+
+  @@unique([userId, noteId])
+}
+
+model Bookmark {
+  id            String     @id @default(uuid())
+  user          User       @relation(fields: [userId], references: [id])
+  userId        String
+  note          Note       @relation(fields: [noteId], references: [id])
+  noteId        String
+  createdAt     DateTime   @default(now())
+
+  @@unique([userId, noteId])
+}
+
+model View {
+  id            String     @id @default(uuid())
+  user          User       @relation(fields: [userId], references: [id])
+  userId        String
+  note          Note       @relation(fields: [noteId], references: [id])
+  noteId        String
+  viewedAt      DateTime   @default(now())
+  ipAddress     String?
+  userAgent     String?
 }
