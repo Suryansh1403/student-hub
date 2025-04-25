@@ -9,6 +9,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
 } from "@/components/ui/sidebar"
 
 // Menu items.
@@ -36,6 +37,7 @@ export default function AppSidebar() {
   return (
     <Sidebar>
       <SidebarContent>
+      <SidebarTrigger/>
         <SidebarGroup>
           <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>

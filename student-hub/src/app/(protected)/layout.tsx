@@ -14,7 +14,7 @@ redirect('/')
     <SidebarProvider>
     <AppSidebar />
     <main>
-      <SidebarTrigger />
+      {/* <SidebarTrigger /> */}
       {children}
     </main>
   </SidebarProvider>

@@ -10,9 +10,8 @@ datasource db {
 }
 model User {
 id    String @id @unique
-  name          String
+  // name          String
   email         String     @unique
-  password      String
   avatarUrl     String?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
@@ -22,13 +21,11 @@ id    String @id @unique
   viewedNotes   View[]
   followers     User[]     @relation("UserFollows")
   following     User[]     @relation("UserFollows")
-
 }
 
 model Note {
   id            String     @id @default(uuid())
-  title         String
-  content       String     @db.Text
+  title         String?
   description   String?
   isPublic      Boolean    @default(false)
   views         Int        @default(0)
@@ -36,28 +33,15 @@ model Note {
   updatedAt     DateTime   @updatedAt
   author        User       @relation(fields: [authorId], references: [id])
   authorId      String
-  subject       Subject    @relation(fields: [subjectId], references: [id])
-  subjectId     String
+
   likes         Like[]
   bookmarks     Bookmark[]
   viewHistory   View[]
-  tags          Tag[]
+  key String @unique
+  url String
 }
 
-model Subject {
-  id            String     @id @default(uuid())
-  name          String     @unique
-  description   String?
-  notes         Note[]
-  createdAt     DateTime   @default(now())
-}
 
-model Tag {
-  id            String     @id @default(uuid())
-  name          String
-  notes         Note[]     @relation()
-  createdAt     DateTime   @default(now())
-}
 
 model Like {
   id            String     @id @default(uuid())
