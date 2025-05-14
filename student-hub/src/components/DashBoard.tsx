@@ -1,15 +1,26 @@
 "use client"
 import Head from 'next/head';
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import DashBoardNav from './DashBoardNav';
 import Notes from './Notes';
 import DashBoardCard from './DashBoardCard';
-
+import socket from '@/utils/socket';
 const DashBoard = () => {
   
     const [activeTab, setActiveTab] = useState('my-notes');
     const [searchQuery, setSearchQuery] = useState('');
-  
+    useEffect(() => {
+      socket.emit('join-room', 'contest-room-123');
+    
+      socket.on('receive-code', (code) => {
+        console.log('Code updated:', code);
+        // Update local state here
+      });
+    
+      return () => {
+        socket.off('receive-code');
+      };
+    }, []);
     // Sample data
     const myNotes = [
       {
@@ -65,7 +76,7 @@ const DashBoard = () => {
  
   
     return (
-      <div className="min-h-screen  bg-red-50">
+      <div className="min-w-screen min-w-[calc(100%-20px)]">
         <Head>
           <title>NoteShare - Dashboard</title>
           <meta name="description" content="Share and discover study notes" />

@@ -35,9 +35,8 @@ const items = [
 
 export default function AppSidebar() {
   return (
-    <Sidebar>
-      <SidebarContent>
-      <SidebarTrigger/>
+    <Sidebar className=" w-64" >
+      <SidebarContent className="">
         <SidebarGroup>
           <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>

@@ -22,7 +22,7 @@ const Page = async () => {
   }
 
   return (
- <div>
+ <div className=''>
 <DashBoard/>
  </div>
   );
