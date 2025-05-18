@@ -1,38 +1,150 @@
-import express from 'express';
-import { createServer } from 'http';
-import { Server } from 'socket.io';
-import cors from 'cors';
+import { Server as SocketIOServer } from "socket.io";
+import { createServer } from "http";
+import express from "express";
+import axios from "axios";
 
+const NEXT_API_URL = "http://localhost:3000"; 
 const app = express();
-app.use(cors());
-
 const httpServer = createServer(app);
-const io = new Server(httpServer, {
+const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: 'http://localhost:3000', // frontend URL
-    methods: ['GET', 'POST'],
+    origin: "*", // Set this properly in production
   },
 });
 
-io.on('connection', (socket) => {
-  console.log(`🟢 User connected: ${socket.id}`);
+type Player = {
+  socketId: string;
+  userId: string;
+  disconnected:boolean
+};
 
-  // Join room (e.g., contest or 1v1)
-  socket.on('join-room', (roomId) => {
+type Room = {
+  players: Player[];
+  status: "waiting" | "active";
+  question?: any[]; // Store question once
+};
+
+const rooms: Record<string, Room> = {};
+
+async function fetchQuestion() {
+  try {
+    const res = await axios.get(`${NEXT_API_URL}/api/get-question`);
+    
+        return res.data.questions;
+  } catch (error:any) {
+    console.error("❌ Error fetching question:", error?.message);
+    return null;
+  }
+}
+io.on("connection",  (socket) => {
+  console.log(`🔌 Socket connected: ${socket.id}`);
+
+  // Create Room
+  socket.on("create-room", ({ roomId, userId }) => {
+    if (rooms[roomId]) {
+      socket.emit("room-exists");
+      return;
+    }
+
+    rooms[roomId] = {
+      
+      players: [{ socketId: socket.id, userId,disconnected:false }],
+      status: "waiting",
+    };
+
     socket.join(roomId);
-    console.log(`👥 ${socket.id} joined room: ${roomId}`);
+    console.log(`✅ Room created: ${roomId}`);
+    socket.emit("waiting");
   });
 
-  // Real-time code sharing
-  socket.on('code-change', ({ roomId, code }) => {
-    socket.to(roomId).emit('receive-code', code);
-  });
+  // Join Room
+socket.on("join-room", async ({ roomId, userId }) => {
+  let room = rooms[roomId];
 
-  socket.on('disconnect', () => {
-    console.log(`🔴 User disconnected: ${socket.id}`);
-  });
+  if (!room) {
+    socket.emit("room-not-found");
+    return;
+  }
+  const player = room.players.find(p => p.userId === userId)
+  if (player) {
+    // Rejoining user — update socket ID
+     player.disconnected=false;
+    room.players = room.players.map(p =>
+      p.userId === userId ? { ...p, socketId: socket.id } : p
+    );
+    socket.join(roomId);
+    console.log(`🔁 User rejoined room: ${roomId}`);
+      socket.emit("start-match", {
+      room,
+      question: room.question,
+    });
+  } else if (room.players.length < 2) {
+    room.players.push({ socketId: socket.id, userId,disconnected:false });
+    socket.join(roomId);
+    console.log(`👥 User joined room: ${roomId}`);
+  } else {
+    socket.emit("room-full");
+    return;
+  }
+
+
+  if (room.players.length === 2) {
+    if (!room.question) {
+      const question = await fetchQuestion();
+      if (!question) {
+        io.to(roomId).emit("error", { message: "Failed to load question" });
+        return;
+      }
+      room.question = question;
+      room.status = "active";
+      io.to(roomId).emit("start-match", {
+        room,
+        question: room.question,
+      });
+    }
+
+  } else {
+    socket.emit("waiting");
+  }
 });
 
-httpServer.listen(4000, () => {
-  console.log('🚀 Socket server listening on http://localhost:4000');
+
+  // Handle disconnection
+socket.on("disconnect", () => {
+  
+  for (const roomId in rooms) {
+    const room = rooms[roomId];
+const player = room.players.find(p => p.socketId === socket.id);
+console.log("disconnecting",player?.userId)
+if(player){
+player.disconnected = true;
+    if (room.players.length === 0) {
+         setTimeout(() => {
+        const stillDisconnected = room.players.find(
+          p => p.userId === player.userId && p.socketId === null 
+        );
+
+        if (stillDisconnected && stillDisconnected.disconnected === true) {
+          // Just remove the player
+          room.players = room.players.filter(p => p.userId !== player.userId);
+          console.log(`⏳ Removed inactive player ${player.userId} from room ${roomId}`);
+        }
+
+        // Only delete room if 0 players now
+        if (room.players.length === 0) {
+          delete rooms[roomId];
+          console.log(`🗑️ Deleted empty room: ${roomId}`);
+        }
+      }, 30000);
+    } 
+  }
+}
+});
+
+});
+
+// Start server
+const PORT = process.env.PORT || 3001;
+httpServer.listen(PORT, () => {
+  console.log(`🚀 Socket.IO server running on port ${PORT}`);
 });

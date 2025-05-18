@@ -75,3 +75,43 @@ model View {
   ipAddress     String?
   userAgent     String?
 }
+
+
+model Question {
+  id           String      @id @default(uuid())
+  title        String
+  description  String      @db.Text
+  difficulty   Difficulty  // Enum: EASY | MEDIUM | HARD
+  tags         String[]    // ["DP", "Graphs"]
+  inputFormat  String?
+  outputFormat String?
+  constraints  String?
+  examples     Example[]   // shown to user
+  testCases    TestCase[]  // hidden, for judging
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+
+model Example {
+  id         String   @id @default(uuid())
+  input      String   @db.Text
+  output     String   @db.Text
+  explanation String?
+  question   Question @relation(fields: [questionId], references: [id])
+  questionId String
+}
+
+model TestCase {
+  id         String   @id @default(uuid())
+  input      String   @db.Text
+  output     String   @db.Text
+  question   Question @relation(fields: [questionId], references: [id])
+  questionId String
+}
