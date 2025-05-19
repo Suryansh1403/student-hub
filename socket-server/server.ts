@@ -39,7 +39,6 @@ async function fetchQuestion() {
 io.on("connection",  (socket) => {
   console.log(`🔌 Socket connected: ${socket.id}`);
 
-  // Create Room
   socket.on("create-room", ({ roomId, userId }) => {
     if (rooms[roomId]) {
       socket.emit("room-exists");
@@ -47,7 +46,6 @@ io.on("connection",  (socket) => {
     }
 
     rooms[roomId] = {
-      
       players: [{ socketId: socket.id, userId,disconnected:false }],
       status: "waiting",
     };
@@ -67,7 +65,6 @@ socket.on("join-room", async ({ roomId, userId }) => {
   }
   const player = room.players.find(p => p.userId === userId)
   if (player) {
-    // Rejoining user — update socket ID
      player.disconnected=false;
     room.players = room.players.map(p =>
       p.userId === userId ? { ...p, socketId: socket.id } : p
@@ -109,35 +106,32 @@ socket.on("join-room", async ({ roomId, userId }) => {
 });
 
 
-  // Handle disconnection
 socket.on("disconnect", () => {
   
   for (const roomId in rooms) {
     const room = rooms[roomId];
 const player = room.players.find(p => p.socketId === socket.id);
 console.log("disconnecting",player?.userId)
-if(player){
-player.disconnected = true;
-    if (room.players.length === 0) {
-         setTimeout(() => {
-        const stillDisconnected = room.players.find(
-          p => p.userId === player.userId && p.socketId === null 
-        );
+// if(player){
+// player.disconnected = true;
+//     if (room.players.length === 0) {
+//          setTimeout(() => {
+//         const stillDisconnected = room.players.find(
+//           p => p.userId === player.userId && p.socketId === null 
+//         );
 
-        if (stillDisconnected && stillDisconnected.disconnected === true) {
-          // Just remove the player
-          room.players = room.players.filter(p => p.userId !== player.userId);
-          console.log(`⏳ Removed inactive player ${player.userId} from room ${roomId}`);
-        }
+//         if (stillDisconnected && stillDisconnected.disconnected === true) {
+//           room.players = room.players.filter(p => p.userId !== player.userId);
+//           console.log(`⏳ Removed inactive player ${player.userId} from room ${roomId}`);
+//         }
 
-        // Only delete room if 0 players now
-        if (room.players.length === 0) {
-          delete rooms[roomId];
-          console.log(`🗑️ Deleted empty room: ${roomId}`);
-        }
-      }, 30000);
-    } 
-  }
+//         if (room.players.length === 0) {
+//           delete rooms[roomId];
+//           console.log(`🗑️ Deleted empty room: ${roomId}`);
+//         }
+//       }, 30000);
+//     } 
+//   }
 }
 });
 
