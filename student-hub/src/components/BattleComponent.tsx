@@ -7,9 +7,11 @@ import { getSocket } from '@/lib/socket'
 import { QuestionWithExamples } from '@/lib/types'
 import { useRouter } from 'next/router'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import CodeEditor from "./CodeEditor";
 
 const BattleComponent = () => {
-    const {userId,setQuestions,setRoomId,roomId} = useOneVOne();
+
+const {userId,setQuestions,setRoomId,roomId} = useOneVOne();
 const socket  = getSocket();
 useEffect(() => {
   if (!roomId) {
@@ -124,37 +126,17 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
 
 
  const [activeIndex, setActiveIndex] = useState(0);
-  const [codes, setCodes] = useState<string[]>(["", "", ""]);
-
+  const [questionId,setQuestionId] = useState<string>(questions[0].title)
   const question = questions[activeIndex];
- const editorRef = useRef<any>(null);
-
-  // Set editor value manually when switching questions
-  useEffect(() => {
-    if (editorRef.current) {
-      editorRef.current.setValue(codes[activeIndex] || "");
-    }
-  }, [activeIndex]);
-
-  const handleEditorMount = (editor: any) => {
-    editorRef.current = editor;
-    editor.setValue(codes[activeIndex] || "");
-  };
 
   const handleTabSwitch = (index: number) => {
-    // Save current code before switching
-    if (editorRef.current) {
-      const currentCode = editorRef.current.getValue();
-      setCodes(prev => {
-        const updated = [...prev];
-        updated[activeIndex] = currentCode;
-        return updated;
-      });
-    }
-
+ 
+    setQuestionId(questions[index].title)
     setActiveIndex(index);
   };
 
+
+  
   return (
     <div className="flex flex-col md:flex-row h-screen">
       {/* Left Panel */}
@@ -199,18 +181,7 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
       <div className="md:w-1/2 w-full p-4 bg-gray-900 text-white overflow-y-auto">
         <h2 className="text-xl font-semibold mb-4">Your Code</h2>
         <div className="h-[85vh] border border-gray-700 rounded overflow-hidden">
-          <MonacoEditor
-            height="100%"
-            theme="vs-dark"
-            language="java"
-            value={codes[activeIndex]}
-            onMount={handleEditorMount}
-            options={{
-              fontSize: 14,
-              minimap: { enabled: false },
-              wordWrap: "on",
-            }}
-          />
+<CodeEditor userId={userId!} questionId={questionId} roomId={"1"}/>
         </div>
       </div>
     </div>
