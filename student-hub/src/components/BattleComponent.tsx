@@ -1,17 +1,14 @@
 "use client"
-import { Monaco } from "@monaco-editor/react";
-import dynamic from "next/dynamic";
 
 import { useOneVOne } from '@/context/1v1Context'
 import { getSocket } from '@/lib/socket'
 import { QuestionWithExamples } from '@/lib/types'
-import { useRouter } from 'next/router'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import CodeEditor from "./CodeEditor";
 
 const BattleComponent = () => {
 
-const {userId,setQuestions,setRoomId,roomId} = useOneVOne();
+const {userId,setQuestions,setRoomId,roomId,questions} = useOneVOne();
 const socket  = getSocket();
 useEffect(() => {
   if (!roomId) {
@@ -20,113 +17,60 @@ useEffect(() => {
   }
 }, [roomId]);
 
-type Question = {
-  title: string;
-  description: string;
-  examples: {
-    input: string;
-    output: string;
-    explanation?: string;
-  }[];
-};
 
-// useEffect(() => {
+
+useEffect(() => {
  
-//     if (!userId || !roomId) return;
+    if (!userId || !roomId) return;
 
-//     const handleConnect = () => {
-//       console.log("handle connect")
-//         socket.emit("join-room", { roomId, userId });
-//     };
+    const handleConnect = () => {
+      console.log("handle connect")
+        socket.emit("join-room", { roomId, userId });
+    };
 
-//     if (socket.connected) {
-//       handleConnect();
-//     } else {
-//       socket.on("connect", handleConnect);
-//     }
+    if (socket.connected) {
+      handleConnect();
+    } else {
+      socket.on("connect", handleConnect);
+    }
 
-//     // Wait state
-//     const handleWaiting = () => {
-//       console.log("Waiting...");
-//     };
+    // Wait state
+    const handleWaiting = () => {
+      console.log("Waiting...");
+    };
 
-//     const handleStartMatch = ({
-//       question,
-//     }: {
-//       question: QuestionWithExamples[];
-//     }) => {
-//       console.log("start match")
-//       if (question) {
-//         setQuestions(question);
-//       }
-//     };
+    const handleStartMatch = ({
+      question,
+    }: {
+      question: QuestionWithExamples[];
+    }) => {
+      console.log("start match")
+      if (question) {
+        setQuestions(question);
+      }
+    };
 
-//     socket.on("waiting", handleWaiting);
-//     socket.on("start-match", handleStartMatch);
+    socket.on("waiting", handleWaiting);
+    socket.on("start-match", handleStartMatch);
 
-//     return () => {
-//       socket.off("connect", handleConnect);
-//       socket.off("waiting", handleWaiting);
-//       socket.off("start-match", handleStartMatch);
-//     };
-//   }, [roomId, userId]);
-
-const questions: Question[] = [
-  {
-    title: "Two Sum",
-    description:
-      "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
-    examples: [
-      {
-        input: "nums = [2,7,11,15], target = 9",
-        output: "[0,1]",
-        explanation: "Because nums[0] + nums[1] == 9, we return [0, 1].",
-      },
-    ],
-  },
-  {
-    title: "Palindrome Number",
-    description:
-      "Given an integer x, return true if x is a palindrome, and false otherwise.",
-    examples: [
-      {
-        input: "x = 121",
-        output: "true",
-        explanation: "121 reads as 121 from left to right and right to left.",
-      },
-      {
-        input: "x = -121",
-        output: "false",
-        explanation: "-121 from left to right is -121. From right to left, it becomes 121-, which is not the same.",
-      },
-    ],
-  },
-  {
-    title: "Roman to Integer",
-    description:
-      "Convert a Roman numeral to an integer.",
-    examples: [
-      {
-        input: "s = 'III'",
-        output: "3",
-      },
-      {
-        input: "s = 'IV'",
-        output: "4",
-      },
-    ],
-  },
-];
+    return () => {
+      socket.off("connect", handleConnect);
+      socket.off("waiting", handleWaiting);
+      socket.off("start-match", handleStartMatch);
+    };
+  }, [roomId, userId]);
 
 
-const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
-  ssr: false,
-  loading: () => <p>Loading Editor...</p>,
-});
+
+if(!questions){
+  return <div>loading</div>
+}
+
+
 
 
  const [activeIndex, setActiveIndex] = useState(0);
-  const [questionId,setQuestionId] = useState<string>(questions[0].title)
+  const [questionId,setQuestionId] = useState<string>(questions[0].id)
   const question = questions[activeIndex];
 
   const handleTabSwitch = (index: number) => {
