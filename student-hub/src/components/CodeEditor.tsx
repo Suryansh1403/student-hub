@@ -4,8 +4,10 @@ import * as monaco from "monaco-editor";
 import {  useEffect, useRef, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import axios from "axios";
+import CodeSubmit from "./CodeSubmit";
+import { QuestionWithExamples } from "@/lib/types";
 
-const CodeEditor = ({ questionId, userId,roomId }:{questionId:string,userId:string,roomId:string}) => {
+const CodeEditor = ({ questionId, userId,roomId,question }:{questionId:string,userId:string,roomId:string,question:QuestionWithExamples}) => {
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor>(null);
   const [isLoaded, setIsLoaded] = useState(false); 
 
@@ -38,7 +40,7 @@ const CodeEditor = ({ questionId, userId,roomId }:{questionId:string,userId:stri
     if (!value) return;
 
     // Save to localStorage
-    console.log(value)
+    
     localStorage.setItem(LOCAL_STORAGE_KEY, value);
 
     // Save to API
@@ -57,6 +59,7 @@ const CodeEditor = ({ questionId, userId,roomId }:{questionId:string,userId:stri
   if (!isLoaded) return <p>Loading editor...</p>;
 
   return (
+    <>
     <MonacoEditor
       height="500px"
       language="javascript"
@@ -69,6 +72,9 @@ const CodeEditor = ({ questionId, userId,roomId }:{questionId:string,userId:stri
         minimap: { enabled: false },
       }}
     />
+<CodeSubmit question={question} localKey={LOCAL_STORAGE_KEY}/>
+    </>
+
   );
 };
 

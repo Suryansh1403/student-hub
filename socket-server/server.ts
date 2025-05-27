@@ -11,17 +11,35 @@ const io = new SocketIOServer(httpServer, {
     origin: "*", // Set this properly in production
   },
 });
-
+type LeaderboardEntry = {
+  userId: string;
+  // username: string;
+  totalCorrect: number;
+  totalAttempts: number;
+  perQuestionStats: {
+    [questionId: string]: {
+      attempts: number;
+      isCorrect: boolean;
+    };
+  };
+  score:number
+};
 type Player = {
   socketId: string;
   userId: string;
   disconnected:boolean
 };
+enum Difficulty {
+  EASY,
+  MEDIUM,
+  HARD
+}
 
 type Room = {
   players: Player[];
   status: "waiting" | "active";
   question?: any[]; // Store question once
+  leaderboard?: LeaderboardEntry[];
 };
 
 const rooms: Record<string, Room> = {};
@@ -74,10 +92,12 @@ socket.on("join-room", async ({ roomId, userId }) => {
       socket.emit("start-match", {
       room,
       question: room.question,
+      leaderboard:room.leaderboard
     });
   } else if (room.players.length < 2) {
     room.players.push({ socketId: socket.id, userId,disconnected:false });
     socket.join(roomId);
+   
     console.log(`👥 User joined room: ${roomId}`);
   } else {
     socket.emit("room-full");
@@ -94,9 +114,14 @@ socket.on("join-room", async ({ roomId, userId }) => {
       }
       room.question = question;
       room.status = "active";
+      room.leaderboard=[]
+      if(room.question)
+
+
       io.to(roomId).emit("start-match", {
         room,
         question: room.question,
+        leaderboard:room.leaderboard
       });
     }
 
@@ -105,6 +130,66 @@ socket.on("join-room", async ({ roomId, userId }) => {
   }
 });
 
+socket.on("leaderboard-update",async ({roomId, userId,score,questionId,correct})=>{
+console.log({roomId, userId,score,questionId,correct})
+const room = rooms[roomId]
+
+if(!room) return
+
+function updateLeaderboard(
+  room: Room,
+  userId: string,
+  score: number,
+  questionId: string,
+  correct: boolean
+) {
+  if (!room.leaderboard) room.leaderboard = [];
+
+  let entry = room.leaderboard.find((e) => e.userId === userId);
+
+  if (!entry) {
+    entry = {
+      userId,
+      score: 0,
+      totalAttempts: 0,
+      totalCorrect: 0,
+      perQuestionStats: {},
+    };
+    room.leaderboard.push(entry);
+  }
+
+  // Initialize question stats if not already
+  if (!entry.perQuestionStats[questionId]) {
+    entry.perQuestionStats[questionId] = {
+      attempts: 0,
+      isCorrect: false,
+    };
+  }
+
+  const questionStats = entry.perQuestionStats[questionId];
+
+  // Update attempts
+  questionStats.attempts += 1;
+  entry.totalAttempts += 1;
+
+  // Only update score and totalCorrect if first time solving correctly
+  if (correct && !questionStats.isCorrect) {
+    questionStats.isCorrect = true;
+    entry.score += score;
+    entry.totalCorrect += 1;
+  }
+
+  // Sort leaderboard based on score and then fewer attempts (tie breaker)
+  room.leaderboard.sort((a, b) =>
+    b.score !== a.score ? b.score - a.score : a.totalAttempts - b.totalAttempts
+  );
+}
+
+updateLeaderboard(room,userId,score,questionId,correct)
+console.log(room.leaderboard)
+io.to(roomId).emit("leaderboard-update",{leaderboard:room.leaderboard})
+
+})
 
 socket.on("disconnect", () => {
   
@@ -112,26 +197,7 @@ socket.on("disconnect", () => {
     const room = rooms[roomId];
 const player = room.players.find(p => p.socketId === socket.id);
 console.log("disconnecting",player?.userId)
-// if(player){
-// player.disconnected = true;
-//     if (room.players.length === 0) {
-//          setTimeout(() => {
-//         const stillDisconnected = room.players.find(
-//           p => p.userId === player.userId && p.socketId === null 
-//         );
 
-//         if (stillDisconnected && stillDisconnected.disconnected === true) {
-//           room.players = room.players.filter(p => p.userId !== player.userId);
-//           console.log(`⏳ Removed inactive player ${player.userId} from room ${roomId}`);
-//         }
-
-//         if (room.players.length === 0) {
-//           delete rooms[roomId];
-//           console.log(`🗑️ Deleted empty room: ${roomId}`);
-//         }
-//       }, 30000);
-//     } 
-//   }
 }
 });
 

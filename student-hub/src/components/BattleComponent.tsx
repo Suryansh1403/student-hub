@@ -2,14 +2,16 @@
 
 import { useOneVOne } from '@/context/1v1Context'
 import { getSocket } from '@/lib/socket'
-import { QuestionWithExamples } from '@/lib/types'
+import { LeaderboardEntry, QuestionWithExamples } from '@/lib/types'
 import React, { useEffect, useState } from 'react'
 import CodeEditor from "./CodeEditor";
+import CodeSubmit from './CodeSubmit'
+import LeaderboardPopup from './LeaderBoardPopUp'
+import LeaderboardContainer from './LeaderBoardContainer'
 
 const BattleComponent = () => {
 
-const {userId,setQuestions,setRoomId,roomId,questions} = useOneVOne();
-const socket  = getSocket();
+const {userId,setQuestions,setRoomId,roomId,questions,socket} = useOneVOne();
 useEffect(() => {
   if (!roomId) {
     const r = localStorage.getItem("roomid");
@@ -45,6 +47,7 @@ useEffect(() => {
       question: QuestionWithExamples[];
     }) => {
       console.log("start match")
+      
       if (question) {
         setQuestions(question);
       }
@@ -62,26 +65,41 @@ useEffect(() => {
 
 
 
-if(!questions){
-  return <div>loading</div>
-}
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [questionId, setQuestionId] = useState<string | null>(questions && questions.length > 0 ? questions[0].id : null);
+  const question = questions?.[activeIndex] ?? null;
+
+useEffect(() => {
+  if (questions && questions.length > 0) {
+    setQuestionId(questions[0].id);
+    setActiveIndex(0);
+  }
+}, [questions]);
 
 
 
 
- const [activeIndex, setActiveIndex] = useState(0);
-  const [questionId,setQuestionId] = useState<string>(questions[0].id)
-  const question = questions[activeIndex];
 
-  const handleTabSwitch = (index: number) => {
- 
-    setQuestionId(questions[index].title)
+const handleTabSwitch = (index: number) => {
+  if (questions && questions.length > index && questions[index]) {
+    setQuestionId(questions[index].id); 
     setActiveIndex(index);
-  };
+  }
+};
 
 
   
+if (!questions || questions.length === 0 || !questionId || !question) {
+ return (
+   <div className="h-screen flex items-center justify-center">
+     <p>Loading match...</p>
+   </div>
+ );
+}
   return (
+
+
+
     <div className="flex flex-col md:flex-row h-screen">
       {/* Left Panel */}
       <div className="md:w-1/2 w-full p-4 overflow-y-auto bg-white border-r border-gray-200">
@@ -100,9 +118,11 @@ if(!questions){
               Q{i + 1}
             </button>
           ))}
-        </div>
 
+<LeaderboardContainer/>
+        </div>
         {/* Question Content */}
+        
         <h2 className="text-2xl font-bold mb-4">{question.title}</h2>
         <p className="mb-4 text-gray-700">{question.description}</p>
 
@@ -125,8 +145,12 @@ if(!questions){
       <div className="md:w-1/2 w-full p-4 bg-gray-900 text-white overflow-y-auto">
         <h2 className="text-xl font-semibold mb-4">Your Code</h2>
         <div className="h-[85vh] border border-gray-700 rounded overflow-hidden">
-<CodeEditor userId={userId!} questionId={questionId} roomId={"1"}/>
+<CodeEditor userId={userId!} question={question} questionId={questionId} roomId={"1"}/>
+
+
+
         </div>
+      
       </div>
     </div>
   );
