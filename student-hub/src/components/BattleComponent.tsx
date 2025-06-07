@@ -8,17 +8,20 @@ import CodeEditor from "./CodeEditor";
 import CodeSubmit from './CodeSubmit'
 import LeaderboardPopup from './LeaderBoardPopUp'
 import LeaderboardContainer from './LeaderBoardContainer'
+import ContestTimer from './ContestTimer'
+import { useRouter } from 'next/navigation'
 
 const BattleComponent = () => {
 
-const {userId,setQuestions,setRoomId,roomId,questions,socket} = useOneVOne();
+const {userId,setQuestions,setRoomId,roomId,questions,socket,setContestResult} = useOneVOne();
+const [endTime, setEndTime] = useState<number | null>(null);
+const router = useRouter()
 useEffect(() => {
   if (!roomId) {
     const r = localStorage.getItem("roomid");
     if (r) setRoomId(r);
   }
 }, [roomId]);
-
 
 
 useEffect(() => {
@@ -43,19 +46,27 @@ useEffect(() => {
 
     const handleStartMatch = ({
       question,
+      endTime
     }: {
       question: QuestionWithExamples[];
+      endTime:number
     }) => {
-      console.log("start match")
+      console.log("start match",endTime)
       
       if (question) {
         setQuestions(question);
       }
+
+      setEndTime(endTime)
+
     };
 
     socket.on("waiting", handleWaiting);
     socket.on("start-match", handleStartMatch);
-
+socket.on("contest-ended", (data) => {
+  setContestResult(data); // Store in context
+  router.push(`/1v1/${roomId}/contestEnd`);
+});
     return () => {
       socket.off("connect", handleConnect);
       socket.off("waiting", handleWaiting);
@@ -120,6 +131,16 @@ if (!questions || questions.length === 0 || !questionId || !question) {
           ))}
 
 <LeaderboardContainer/>
+<div className="p-4">
+      {endTime && (
+        <ContestTimer
+          endTime={endTime}
+          onExpire={() => {
+            alert("Time's up! Submissions disabled.")
+          }}
+        />
+      )}
+    </div>
         </div>
         {/* Question Content */}
         

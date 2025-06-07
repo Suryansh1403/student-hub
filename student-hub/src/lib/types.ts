@@ -1,4 +1,4 @@
-import { Question, Example } from "@prisma/client";
+import { Question, Example, EndReason } from "@prisma/client";
 
 export type QuestionWithExamples = Question & {
   examples: Example[];
@@ -6,16 +6,26 @@ export type QuestionWithExamples = Question & {
 
 
 
+
+
+export type QuestionStat = {
+  questionId: string;
+  attempts: number;
+  isCorrect: boolean;
+};
+
 export type LeaderboardEntry = {
   userId: string;
-  // username: string;
-  totalCorrect: number;
-  totalAttempts: number;
-  perQuestionStats: {
-    [questionId: string]: {
-      attempts: number;
-      isCorrect: boolean;
-    };
+  score: number;
+  questionStats: {
+    [questionId: string]: QuestionStat;
   };
-  score:number
+};
+
+export type ContestResultPayload = {
+  roomId: string;
+  winnerId?: string;
+  reason: EndReason;
+  leaderboard: LeaderboardEntry[];
+  participants: string[]; // userIds
 };

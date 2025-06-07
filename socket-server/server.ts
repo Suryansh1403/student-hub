@@ -29,17 +29,16 @@ type Player = {
   userId: string;
   disconnected:boolean
 };
-enum Difficulty {
-  EASY,
-  MEDIUM,
-  HARD
-}
+
 
 type Room = {
   players: Player[];
   status: "waiting" | "active";
   question?: any[]; // Store question once
   leaderboard?: LeaderboardEntry[];
+  startTime?: number; // in ms
+  endTime?: number; 
+  timer? : any
 };
 
 const rooms: Record<string, Room> = {};
@@ -54,6 +53,31 @@ async function fetchQuestion() {
     return null;
   }
 }
+
+
+
+async function submitContestResult(
+  {roomId,winnerId,reason,p1,p2,leaderboard}:
+  {roomId:string,winnerId:string|null,reason:string,p1:string,p2:string,leaderboard:LeaderboardEntry[]|undefined}
+) {
+  const response = await fetch(`${NEXT_API_URL}/api/code/result`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      roomId: roomId,
+      winnerId: winnerId, // or null if no winner
+      reason: reason,   // or "time"
+      participants: [p1,p2],
+      leaderboard:leaderboard
+    }),
+  });
+
+  const data = await response.json();
+return data
+}
+
 io.on("connection",  (socket) => {
   console.log(`🔌 Socket connected: ${socket.id}`);
 
@@ -90,9 +114,10 @@ socket.on("join-room", async ({ roomId, userId }) => {
     socket.join(roomId);
     console.log(`🔁 User rejoined room: ${roomId}`);
       socket.emit("start-match", {
-      room,
+
       question: room.question,
-      leaderboard:room.leaderboard
+      leaderboard:room.leaderboard,
+      endTime:room.endTime
     });
   } else if (room.players.length < 2) {
     room.players.push({ socketId: socket.id, userId,disconnected:false });
@@ -115,13 +140,22 @@ socket.on("join-room", async ({ roomId, userId }) => {
       room.question = question;
       room.status = "active";
       room.leaderboard=[]
+        const durationMs = 1 * 60 * 1000; // 30 minutes
+room.startTime = Date.now();
+room.endTime = Date.now() + durationMs;
+room.timer = setTimeout(async () => {
+    await submitContestResult({roomId,winnerId:userId,reason:"time",p1:room.players[0].userId,p2:room.players[1].userId,leaderboard:room.leaderboard})
+
+    io.to(roomId).emit("contest-ended", {winner:null, reason: "time", leaderboard: room.leaderboard });
+    delete rooms[roomId]
+}, 1 * 60 * 1000);
       if(room.question)
-
-
       io.to(roomId).emit("start-match", {
-        room,
+    
         question: room.question,
-        leaderboard:room.leaderboard
+        leaderboard:room.leaderboard,
+        startTime:room.startTime,
+        endTime:room.endTime
       });
     }
 
@@ -177,12 +211,26 @@ function updateLeaderboard(
     questionStats.isCorrect = true;
     entry.score += score;
     entry.totalCorrect += 1;
+
+
   }
 
   // Sort leaderboard based on score and then fewer attempts (tie breaker)
   room.leaderboard.sort((a, b) =>
     b.score !== a.score ? b.score - a.score : a.totalAttempts - b.totalAttempts
   );
+
+  const values = Object.values(entry.perQuestionStats);
+
+  const result = values.length ===3 &&   values.every((stat) => stat.isCorrect === true);
+  if (result) {
+    clearTimeout(room.timer); 
+    submitContestResult({roomId,winnerId:userId,reason:"winner",p1:room.players[0].userId,p2:room.players[1].userId,leaderboard:room.leaderboard})
+    io.to(roomId).emit("contest-ended", { winner: userId, reason: "winner", leaderboard: room.leaderboard });
+
+    delete rooms[roomId]
+  }
+
 }
 
 updateLeaderboard(room,userId,score,questionId,correct)
@@ -208,3 +256,5 @@ const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, () => {
   console.log(`🚀 Socket.IO server running on port ${PORT}`);
 });
+
+

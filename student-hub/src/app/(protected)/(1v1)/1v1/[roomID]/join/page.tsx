@@ -13,5 +13,5 @@ const roomId = await params.roomID
 //     return
 // }
 
-  return <ClientRoomPage roomId={roomId}  join={"yes"} />;
+  return <ClientRoomPage  join={"yes"} />;
 }

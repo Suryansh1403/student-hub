@@ -21,6 +21,7 @@ id    String @id @unique
   viewedNotes   View[]
   followers     User[]     @relation("UserFollows")
   following     User[]     @relation("UserFollows")
+  contestResult ContestResult[] @relation("ContestParticipants")
 }
 
 model Note {
@@ -81,13 +82,13 @@ model Question {
   id           String      @id @default(uuid())
   title        String
   description  String      @db.Text
-  difficulty   Difficulty  // Enum: EASY | MEDIUM | HARD
-  tags         String[]    // ["DP", "Graphs"]
+  difficulty   Difficulty  
+  tags         String[]    
   inputFormat  String?
   outputFormat String?
   constraints  String?
-  examples     Example[]   // shown to user
-  testCases    TestCase[]  // hidden, for judging
+  examples     Example[]   
+  testCases    TestCase[]  
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   submittedCodes CodeSubmission[]
@@ -129,4 +130,47 @@ model CodeSubmission {
   updatedAt   DateTime @updatedAt
 
   @@unique([userId, roomId, questionId])
+}
+
+
+model ContestResult {
+  id          String          @id @default(uuid())
+  roomId      String          @unique
+  winnerId    String?         // null if no winner
+  reason      EndReason
+  endedAt     DateTime        @default(now())
+  
+  participants User[]         @relation("ContestParticipants")
+  leaderboard  LeaderboardEntry[]
+
+  @@map("contest_results")
+}
+
+model LeaderboardEntry {
+  id               String           @id @default(uuid())
+  userId           String
+  score            Int
+  contestResultId  String
+  contestResult    ContestResult   @relation(fields: [contestResultId], references: [id])
+  questionStats    QuestionStat[]
+
+  @@map("leaderboard_entries")
+}
+
+model QuestionStat {
+  id                 String         @id @default(uuid())
+  questionId         String
+  attempts           Int
+  isCorrect          Boolean
+  leaderboardEntryId String
+  leaderboardEntry   LeaderboardEntry @relation(fields: [leaderboardEntryId], references: [id])
+
+  @@map("question_stats")
+}
+
+
+
+enum EndReason {
+  winner
+  time
 }
